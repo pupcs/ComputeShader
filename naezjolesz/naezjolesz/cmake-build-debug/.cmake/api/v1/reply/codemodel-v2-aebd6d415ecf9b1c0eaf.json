@@ -1,0 +1,78 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.11"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Soft_body_simulation",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "glew::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-glew-Debug-3c1f98d7b79d987b2de3.json",
+					"name" : "glew",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "glut::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-glut-Debug-b92f5e657627a98ce808.json",
+					"name" : "glut",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "program::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-program-Debug-9e6e1f6097a886a956c5.json",
+					"name" : "program",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug",
+		"source" : "C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 5
+	}
+}

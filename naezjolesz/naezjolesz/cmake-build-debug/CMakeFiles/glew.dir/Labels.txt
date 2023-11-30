@@ -1,0 +1,13 @@
+# Target labels
+ glew
+# Source files and their labels
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/glew
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/glew.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/glew-complete.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-build.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-configure.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-download.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-install.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-mkdir.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-patch.rule
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/glew-prefix/src/glew-stamp/glew-update.rule

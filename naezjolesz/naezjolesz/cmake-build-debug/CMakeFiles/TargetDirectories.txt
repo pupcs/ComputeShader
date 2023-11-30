@@ -1,0 +1,5 @@
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/program.dir
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/glut.dir
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/glew.dir
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Csongor/OneDrive/Dokumentumok/GitHub/ComputeShader/naezjolesz/naezjolesz/cmake-build-debug/CMakeFiles/rebuild_cache.dir
