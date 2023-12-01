@@ -141,6 +141,8 @@ void main() {
     fragmentColor = vec4(trace(ray), 1);
 }
 )";
+
+
 const char *MetaBall = R"(
 #version 410
 precision highp float;
@@ -175,7 +177,7 @@ struct Ray {
 const int nMaxObjects = 500;
 
 uniform vec3 wEye;
-uniform Light light;
+uniform float time;
 uniform Material materials[2];  // diffuse, specular, ambient ref
 uniform int nObjects;
 uniform Sphere objects[nMaxObjects];
@@ -184,82 +186,56 @@ uniform float Time;
 in  vec3 p;					// point on camera window corresponding to the pixel
 out vec4 fragmentColor;		// output that goes to the raster memory as told by glBindFragDataLocation
 
-Hit intersect(const Sphere object, const Ray ray) {
-    Hit hit;
-    hit.t = -1;
-    float t = 0.1;
-    for (int i = 0; i < 100; i++) { // maximum 100 lépés
-        vec3 p = ray.start + ray.dir * t;
-        float f = length(object.center - p) - object.radius;
-        if (f < 0.01) {
-            hit.t = t;
-            hit.position = p;
-            hit.normal = normalize(p - object.center);
-            return hit;
+
+float calc_metaball(vec3 p){
+        float acc = 0;
+
+        for (int i=0 ; i < nObjects; i++ ){
+            float dist = length(p-objects[i].center);
+
+            acc+= 1.0/(dist*dist);
         }
-        t += f;
-    }
-    return hit;
+        return acc;
 }
 
-Hit firstIntersect(Ray ray) {
-    Hit bestHit;
-    bestHit.t = -1;
-    for (int o = 0; o < nObjects; o++) {
-        Hit hit = intersect(objects[o], ray); //  hit.t < 0 if no intersection
-        if (o < nObjects/2) hit.mat = 0;	 // half of the objects are rough
-        else			    hit.mat = 1;     // half of the objects are reflective
-        if (hit.t > 0 && (bestHit.t < 0 || hit.t < bestHit.t))  bestHit = hit;
-    }
-    if (dot(ray.dir, bestHit.normal) > 0) bestHit.normal = bestHit.normal * (-1);
-    return bestHit;
-}
-
-bool shadowIntersect(Ray ray) {	// for directional lights
-    for (int o = 0; o < nObjects; o++) if (intersect(objects[o], ray).t > 0) return true; //  hit.t < 0 if no intersection
-    return false;
-}
-
-vec3 Fresnel(vec3 F0, float cosTheta) {
-    return F0 + (vec3(1, 1, 1) - F0) * pow(cosTheta, 5);
-}
-
-const float epsilon = 0.0001f;
-const int maxdepth = 5;
-
-vec3 trace(Ray ray) {
-    vec3 weight = vec3(1, 1, 1);
-    vec3 outRadiance = vec3(0, 0, 0);
-    for(int d = 0; d < maxdepth; d++) {
-        Hit hit = firstIntersect(ray);
-        if (hit.t < 0) return weight * light.La;
-        if (materials[hit.mat].rough == 1) {
-            outRadiance += weight * materials[hit.mat].ka * light.La;
-            Ray shadowRay;
-            shadowRay.start = hit.position + hit.normal * epsilon;
-            shadowRay.dir = light.direction;
-            float cosTheta = dot(hit.normal, light.direction);
-            if (cosTheta > 0 && !shadowIntersect(shadowRay)) {
-                outRadiance += weight * light.Le * materials[hit.mat].kd * cosTheta;
-                vec3 halfway = normalize(-ray.dir + light.direction);
-                float cosDelta = dot(hit.normal, halfway);
-                if (cosDelta > 0) outRadiance += weight * light.Le * materials[hit.mat].ks * pow(cosDelta, materials[hit.mat].shininess);
-            }
-        }
-
-        if (materials[hit.mat].reflective == 1) {
-            weight *= Fresnel(materials[hit.mat].F0, dot(-ray.dir, hit.normal));
-            ray.start = hit.position + hit.normal * epsilon;
-            ray.dir = reflect(ray.dir, hit.normal);
-        } else return outRadiance;
-    }
-}
 
 void main() {
+  /**  Ray ray;
+    ray.start = wEye;
+    ray.dir = normalize(p - wEye);
+    fragmentColor = vec4(trace(ray), 1);**/
+
+    float acc = 0;
     Ray ray;
     ray.start = wEye;
     ray.dir = normalize(p - wEye);
-    fragmentColor = vec4(trace(ray), 1);
+
+    for(int j=0; j<1000 ; j++){
+        for (int i=0 ; i < nObjects; i++ ){
+            float dist = length(ray.start-objects[i].center);
+            if( i == 1 ){dist = length(ray.start-vec3(0.6*cos(time*12),0.4*cos(time),0.0));}
+            if( i == 2 ) {dist = length(ray.start-vec3(0.0,0.5*cos(time),0.0));}
+            if( i == 3 ) {dist = length(ray.start-vec3(0.4*sin(time*0.3),0.7*cos(time*4),0.0));}
+            if( i == 4 ) {dist = length(ray.start-vec3(0.0,0.5*cos(time),0.0));}
+            if( i == 5 ) {dist = length(ray.start-vec3(0.5*cos(time),0.0,0.0));}
+
+
+            acc+= 1.0/(dist*dist);
+            if(acc > 100.0f){
+                float dx = calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.001,0.0,0.0));
+                float dy = calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.0,0.001,0.0));
+                float dz = calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.0,0.0,0.001));
+                vec3 normal = normalize(vec3(dx,dy,dz));
+                fragmentColor = vec4(normal,1.0);
+
+                return;
+            }
+        }
+        acc = 0;
+        ray.start += ray.dir*0.005f;
+    }
+
+    fragmentColor = vec4( 0.0, 0.0, 0.01,  1.0);
 }
 )";
 
@@ -337,12 +313,15 @@ public:
         right = normalize(cross(vup, w)) * f * tanf(fov / 2);
         up = normalize(cross(w, right)) * f * tanf(fov / 2);
     }
-    void Animate(float dt) {
+    void Animate(float dt = 0.1f) {
         eye = vec3((eye.x - lookat.x) * cos(dt) + (eye.z - lookat.z) * sin(dt) + lookat.x,
                    eye.y,
                    -(eye.x - lookat.x) * sin(dt) + (eye.z - lookat.z) * cos(dt) + lookat.z);
+
         set(eye, lookat, up, fov);
     }
+    vec3 getEye(){return eye;}
+    void setEye(vec3 newEye){eye = newEye;}
 };
 
 //---------------------------
@@ -395,6 +374,7 @@ public:
         }
     }
 };
+
 class Shader_metaball : public GPUProgram {
 //---------------------------
 public:
@@ -411,10 +391,8 @@ public:
         }
     }
 
-    void setUniformLight(Light* light) {
-        setUniform(light->La, "light.La");
-        setUniform(light->Le, "light.Le");
-        setUniform(light->direction, "light.direction");
+    void setUniformLight(float t) {
+        setUniform(t, "time");
     }
 
     void setUniformCamera(const Camera& camera) {
@@ -463,17 +441,16 @@ public:
         materials.push_back(new RoughMaterial(kd, ks, 50));
         materials.push_back(new RoughMaterial(kd, ks, 50));
 
+        objects.push_back(new Sphere(vec3(  0.0f,  0.0f,   0.0f),  0.1f));
+        objects.push_back(new Sphere(vec3(  0.0f,  0.0f,  - 0.5f),  0.1f));
+        objects.push_back(new Sphere(vec3(  0.3f,  0.0f,  - 0.5f),  0.1f));
 
-        objects.push_back(new Sphere(vec3(  0.5f,  - 0.5f,  - 0.5f),  0.1f));
-        objects.push_back(new Sphere(vec3(  0.0f,  - 0.5f,  - 0.5f),  0.1f));
-        objects.push_back(new Sphere(vec3(  0.3f,  - 0.5f,  - 0.5f),  0.1f));
-
-
-
-        metaballs.push_back(new Sphere(vec3(  0.5f,  - 0.5f,  - 0.5f),  0.1f));
-        metaballs.push_back(new Sphere(vec3(  0.0f,  - 0.5f,  - 0.5f),  0.1f));
-        metaballs.push_back(new Sphere(vec3(  0.3f,  - 0.5f,  - 0.5f),  0.1f));
-
+        metaballs.push_back(new Sphere(vec3(  0.0f,  0.0f,   0.0f),  0.1f));
+        metaballs.push_back(new Sphere(vec3(  0.0f,  0.0f,  - 0.5f),  0.1f));
+        metaballs.push_back(new Sphere(vec3(  0.3f,  0.0f,  - 0.5f),  0.1f));
+        metaballs.push_back(new Sphere(vec3(  0.0f,  0.0f,   0.0f),  0.1f));
+        metaballs.push_back(new Sphere(vec3(  0.0f,  0.0f,  - 0.5f),  0.1f));
+        metaballs.push_back(new Sphere(vec3(  0.3f,  0.0f,  - 0.5f),  0.1f));
 
     }
 
@@ -484,15 +461,19 @@ public:
         shader.setUniformLight(lights[0]);
         shader.setUniformCamera(camera);
     }
-    void setUniform1(Shader_metaball& shader, float dt) {
+    void setUniform1(Shader_metaball& shader, float t) {
         shader.setUniformObjects(metaballs);
         shader.setUniformMaterials(materials);
-        shader.setUniformLight(lights[0]);
+        shader.setUniformLight(t);
         shader.setUniformCamera(camera);
-        //shader.setUniformTime(dt);
     }
 
-    void Animate(float dt) { camera.Animate(dt); }
+    void Animate_buttons(float dt) { camera.Animate(dt); }
+    void Animate(float dt) { }
+
+    vec3 getEye(){return camera.getEye();}
+    void setEye(vec3 newEye){ camera.setEye(newEye);}
+
 };
 
 Shader shader; // vertex and fragment shaders
@@ -528,6 +509,7 @@ public:
 
 FullScreenTexturedQuad fullScreenTexturedQuad;
 
+
 // Initialization, create an OpenGL context
 void onInitialization() {
     glViewport(0, 0, windowWidth, windowHeight);
@@ -539,10 +521,9 @@ void onInitialization() {
     shader_metaball.create(vertexSource, MetaBall, "fragmentColor");
     shader.create(vertexSource, fragmentSource, "fragmentColor");
 
-
-
-
 }
+
+float time_ = 0;
 
 // Window has become invalid: Redraw
 void onDisplay() {
@@ -556,8 +537,10 @@ void onDisplay() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the screen
 
     if(metaball){
+        time_+=0.01f;
+        if(time_ > 2*M_PI) time_ = 0;
         shader_metaball.Use();
-        scene.setUniform1(shader_metaball, tEnd);
+        scene.setUniform1(shader_metaball, time_);
     }
     else{
         shader.Use();
@@ -582,6 +565,12 @@ void onKeyboard(unsigned char key, int pX, int pY) {
             onDisplay();
         }
 
+    }
+    if (key=='a') {
+        scene.Animate_buttons(0.1f);
+    }
+    if (key=='d') {
+        scene.Animate_buttons(-0.1f);
     }
 }
 
