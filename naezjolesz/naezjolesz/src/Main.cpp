@@ -181,11 +181,10 @@ uniform float time;
 uniform Material materials[2];  // diffuse, specular, ambient ref
 uniform int nObjects;
 uniform Sphere objects[nMaxObjects];
-uniform float Time;
+uniform Light light;
 
 in  vec3 p;					// point on camera window corresponding to the pixel
 out vec4 fragmentColor;		// output that goes to the raster memory as told by glBindFragDataLocation
-
 
 float calc_metaball(vec3 p){
         float acc = 0;
@@ -200,42 +199,67 @@ float calc_metaball(vec3 p){
 
 
 void main() {
-  /**  Ray ray;
-    ray.start = wEye;
-    ray.dir = normalize(p - wEye);
-    fragmentColor = vec4(trace(ray), 1);**/
+ vec3 color = vec3(0.0);
 
     float acc = 0;
     Ray ray;
     ray.start = wEye;
     ray.dir = normalize(p - wEye);
 
-    for(int j=0; j<1000 ; j++){
-        for (int i=0 ; i < nObjects; i++ ){
-            float dist = length(ray.start-objects[i].center);
-            if( i == 1 ){dist = length(ray.start-vec3(0.6*cos(time*12),0.4*cos(time),0.0));}
-            if( i == 2 ) {dist = length(ray.start-vec3(0.0,0.5*cos(time),0.0));}
-            if( i == 3 ) {dist = length(ray.start-vec3(0.4*sin(time*0.3),0.7*cos(time*4),0.0));}
-            if( i == 4 ) {dist = length(ray.start-vec3(0.0,0.5*cos(time),0.0));}
-            if( i == 5 ) {dist = length(ray.start-vec3(0.5*cos(time),0.0,0.0));}
+    for(int j = 0; j < 800; j++) {
+        for (int i = 0; i < nObjects; i++) {
+            float dist = length(ray.start - objects[i].center);
+            if (i == 1) { dist = length(ray.start - vec3(0.6 * cos(time * 12), 0.4 * cos(time), 0.0)); }
+            if (i == 2) { dist = length(ray.start - vec3(0.0, 0.5 * cos(time), 0.0)); }
+            if (i == 3) { dist = length(ray.start - vec3(0.4 * sin(time * 0.3), 0.7 * cos(time * 4), 0.0)); }
+            if (i == 4) { dist = length(ray.start - vec3(0.0, 0.5 * cos(time), 0.0)); }
+            if (i == 5) { dist = length(ray.start - vec3(0.5 * cos(time), 0.0, 0.0)); }
 
 
-            acc+= 1.0/(dist*dist);
-            if(acc > 100.0f){
-                float dx = calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.001,0.0,0.0));
-                float dy = calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.0,0.001,0.0));
-                float dz = calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.0,0.0,0.001));
-                vec3 normal = normalize(vec3(dx,dy,dz));
-                fragmentColor = vec4(normal,1.0);
+            acc += 1.0 / (dist * dist);
+            if (acc > 100.0f) {
+                vec3 normal = normalize(vec3(
+                    calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.001, 0.0, 0.0)),
+                    calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.0, 0.001, 0.0)),
+                    calc_metaball(ray.start) - calc_metaball(ray.start + vec3(0.0, 0.0, 0.001))
+                ));
 
+                vec3 viewDir = normalize(wEye - p);
+                vec3 lightDir = normalize(light.direction);
+                vec3 halfwayDir = normalize(lightDir + viewDir);
+
+                vec3 ambient = materials[0].ka * light.La;
+                float diffuseFactor = max(dot(normal, lightDir), 0.0);
+                vec3 diffuse = materials[0].kd * light.Le * diffuseFactor;
+
+                float specularAngle = max(dot(normal, halfwayDir), 0.0);
+                float specularFactor = pow(specularAngle, materials[0].shininess);
+                vec3 specular = materials[0].ks * light.Le * specularFactor;
+
+                bool isShadowed = false;
+                for (int k = 0; k < nObjects; ++k) {
+                    float shadowDist = length(ray.start - objects[k].center);
+                    if (shadowDist < objects[k].radius) {
+                        isShadowed = true;
+                        break;
+                    }
+                }
+
+                if (!isShadowed) {
+                    color += ambient + diffuse + specular;
+                } else {
+                    color += ambient;
+                }
+
+                fragmentColor = vec4(color, 1.0);
                 return;
             }
         }
         acc = 0;
-        ray.start += ray.dir*0.005f;
+        ray.start += ray.dir * 0.003f;
     }
 
-    fragmentColor = vec4( 0.0, 0.0, 0.01,  1.0);
+    fragmentColor = vec4(0.0, 0.0, 0.01, 1.0);
 }
 )";
 
@@ -281,20 +305,6 @@ struct Sphere {
 
 };
 
-struct Metaball {
-    vec3 center;
-    float radiusSquared;
-
-
-    Metaball(const vec3& _center, float _radius) : center(_center), radiusSquared(_radius * _radius) {
-    }
-
-    float influenceAtPoint(const vec3& point) const {
-        float distanceSquared = dot(point - center, point - center);
-        return pow(1.0f - distanceSquared / radiusSquared, 2);
-    }
-
-};
 
 
 
@@ -391,8 +401,13 @@ public:
         }
     }
 
-    void setUniformLight(float t) {
+    void setUniformTime(float t) {
         setUniform(t, "time");
+    }
+    void setUniformLight(Light* light) {
+        setUniform(light->La, "light.La");
+        setUniform(light->Le, "light.Le");
+        setUniform(light->direction, "light.direction");
     }
 
     void setUniformCamera(const Camera& camera) {
@@ -409,9 +424,6 @@ public:
             sprintf(name, "objects[%d].center", o);  setUniform(objects[o]->center, name);
             sprintf(name, "objects[%d].radius", o);  setUniform(objects[o]->radius, name);
         }
-    }
-    void setUniformTime(const float dt) {
-        setUniform(dt, "Time");
     }
 };
 
@@ -435,7 +447,7 @@ public:
         float fov = 45 * (float)M_PI / 180;
         camera.set(eye, lookat, vup, fov);
 
-        lights.push_back(new Light(vec3(1, 1, 1), vec3(3, 3, 3), vec3(0.4f, 0.3f, 0.3f)));
+        lights.push_back(new Light(vec3(10, 10, 10), vec3(3, 3, 3), vec3(0.4f, 0.3f, 0.3f)));
 
         vec3 kd(0.3f, 0.2f, 0.1f), ks(10, 10, 10);
         materials.push_back(new RoughMaterial(kd, ks, 50));
@@ -464,7 +476,8 @@ public:
     void setUniform1(Shader_metaball& shader, float t) {
         shader.setUniformObjects(metaballs);
         shader.setUniformMaterials(materials);
-        shader.setUniformLight(t);
+        shader.setUniformLight(lights[0]);
+        shader.setUniformTime(t);
         shader.setUniformCamera(camera);
     }
 
@@ -568,9 +581,11 @@ void onKeyboard(unsigned char key, int pX, int pY) {
     }
     if (key=='a') {
         scene.Animate_buttons(0.1f);
+
     }
     if (key=='d') {
         scene.Animate_buttons(-0.1f);
+
     }
 }
 
@@ -589,6 +604,6 @@ void onMouseMotion(int pX, int pY) {
 
 // Idle event indicating that some time elapsed: do animation here
 void onIdle() {
-    scene.Animate(0.01f);
+    scene.Animate(0.1f);
     glutPostRedisplay();
 }
